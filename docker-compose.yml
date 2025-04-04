@@ -1,0 +1,13 @@
+version: '3'
+
+services:
+  api:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./sample_images:/app/sample_images
+      - ./results:/app/results
+    environment:
+      - FLASK_APP=__init__:create_app
+      - FLASK_RUN_PORT=8080
