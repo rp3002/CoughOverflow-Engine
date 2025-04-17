@@ -1,0 +1,9 @@
+credentials
+.terraform/
+.terraform.lock.hcl
+__pycache__/
+*.pyc
+venv/
+*.zip
+.DS_Store
+
