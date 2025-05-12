@@ -21,13 +21,16 @@ provider "aws" {
   }
 }
 
-# VPC, Subnet, IAM Role, and Security Groups
-# Fetch the Lab IAM Role 
+data "aws_caller_identity" "current" {}
+
+# ========================
+# VPC, Subnets, IAM, SGs
+# ========================
+
 data "aws_iam_role" "lab" {
   name = "LabRole"
 }
 
-# Use default VPC provided in the Lab
 data "aws_vpc" "default" {
   default = true
 }
@@ -44,8 +47,6 @@ data "aws_subnets" "public" {
   }
 }
 
-# Security Groups
-# For the Load Balancer (allow HTTP from public)
 resource "aws_security_group" "alb_sg" {
   name        = "coughoverflow-alb-sg"
   description = "Allow HTTP from internet"
@@ -66,7 +67,6 @@ resource "aws_security_group" "alb_sg" {
   }
 }
 
-# For the ECS task (allow only ALB to talk to container port 8080)
 resource "aws_security_group" "ecs_sg" {
   name        = "coughoverflow-ecs-sg"
   description = "Allow traffic from ALB to ECS task on port 8080"
@@ -76,7 +76,7 @@ resource "aws_security_group" "ecs_sg" {
     from_port       = 8080
     to_port         = 8080
     protocol        = "tcp"
-    security_groups = [aws_security_group.alb_sg.id] # ALB-only access
+    security_groups = [aws_security_group.alb_sg.id]
   }
 
   egress {
@@ -87,7 +87,10 @@ resource "aws_security_group" "ecs_sg" {
   }
 }
 
-#Load Balancer, Target Group and Listener
+# =======================
+# Load Balancer + ECS
+# =======================
+
 resource "aws_lb" "coughoverflow_lb" {
   name               = "coughoverflow-lb"
   internal           = false
@@ -124,7 +127,6 @@ resource "aws_lb_listener" "coughoverflow_listener" {
   }
 }
 
-#ECS Cluster, Task, Service, CloudWatch Logs
 resource "aws_ecs_cluster" "coughoverflow_cluster" {
   name = "coughoverflow-cluster"
 }
@@ -145,7 +147,7 @@ resource "aws_ecs_task_definition" "coughoverflow_task" {
   container_definitions = jsonencode([
     {
       name      = "coughoverflow",
-      image     = "735537156226.dkr.ecr.us-east-1.amazonaws.com/coughoverflow:latest",
+      image     = "${data.aws_caller_identity.current.account_id}.dkr.ecr.us-east-1.amazonaws.com/coughoverflow:latest",
       essential = true,
       portMappings = [
         {
@@ -190,9 +192,7 @@ resource "aws_ecs_service" "coughoverflow_service" {
   depends_on = [aws_lb_listener.coughoverflow_listener]
 }
 
-# output
 output "coughoverflow_url" {
   value       = aws_lb.coughoverflow_lb.dns_name
   description = "Public Load Balancer DNS for COUGHOVERFLOW API"
 }
-

@@ -1,1 +1,1 @@
-http://coughoverflow-lb-533553647.us-east-1.elb.amazonaws.com/api/v1
+http://coughoverflow-lb-725735403.us-east-1.elb.amazonaws.com/api/v1
